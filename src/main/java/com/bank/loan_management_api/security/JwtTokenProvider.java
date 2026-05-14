@@ -31,4 +31,29 @@ public class JwtTokenProvider {
                 .signWith(key)
                 .compact();
     }
+    public String getEmailFromToken(String token) {
+
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
+    public boolean validateToken(String token) {
+        try {
+            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
+            Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token);
+
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
 }
