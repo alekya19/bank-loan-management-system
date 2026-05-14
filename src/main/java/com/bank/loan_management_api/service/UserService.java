@@ -5,7 +5,7 @@ import com.bank.loan_management_api.entity.User;
 import com.bank.loan_management_api.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import com.bank.loan_management_api.exception.BadRequestException;
 @Service
 public class UserService {
     private final UserRepository userRepository;
@@ -20,7 +20,9 @@ public class UserService {
     }
 
     public UserResponse registerUser(UserRegistrationRequest request){
-
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new BadRequestException("Email is already registered");
+        }
         User user = new User();
 
         user.setFirstName(request.getFirstName());
