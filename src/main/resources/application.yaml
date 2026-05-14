@@ -18,3 +18,7 @@ spring:
 
 server:
   port: 8080
+app:
+  jwt:
+    secret: "mySuperSecretJwtKeyForLoanManagementApplication123456789"
+    expiration-ms: 86400000
