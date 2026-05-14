@@ -1,4 +1,10 @@
 package com.bank.loan_management_api.repository;
+import com.bank.loan_management_api.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public class UserRepository {
+import java.util.Optional;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    Optional<User> findByEmail(String email);
 }

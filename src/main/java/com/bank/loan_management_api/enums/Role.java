@@ -1,4 +1,7 @@
 package com.bank.loan_management_api.enums;
 
-public class Role {
+public enum Role {
+    ADMIN,
+    LOAN_OFFICER,
+    CUSTOMER
 }
