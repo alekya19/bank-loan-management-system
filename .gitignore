@@ -31,4 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+target/
 uploads/
+.idea/
+*.log
+.env
