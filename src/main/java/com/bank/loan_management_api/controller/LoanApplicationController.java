@@ -10,7 +10,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-
+import com.bank.loan_management_api.dto.request.LoanStatusUpdateRequest;
+import java.util.List;
 @RestController
 @RequestMapping("/api/loans")
 public class LoanApplicationController {
@@ -31,5 +32,35 @@ public class LoanApplicationController {
                 loanApplicationService.applyForLoan(principal.getName(), request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+    //Add API — Get Pending Loans
+    @GetMapping("/pending-review")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOAN_OFFICER')")
+    public ResponseEntity<List<LoanApplicationResponse>> getPendingLoans() {
+
+        return ResponseEntity.ok(
+                loanApplicationService.getPendingLoans()
+        );
+    }
+    //Add API — Update Loan Status
+    @PutMapping("/{loanId}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOAN_OFFICER')")
+    public ResponseEntity<LoanApplicationResponse> updateLoanStatus(
+            @PathVariable Long loanId,
+            @Valid @RequestBody LoanStatusUpdateRequest request) {
+
+        return ResponseEntity.ok(
+                loanApplicationService.updateLoanStatus(loanId, request)
+        );
+    }
+    //Add API — Customer View Own Loans
+    @GetMapping("/my-loans")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<List<LoanApplicationResponse>> getMyLoans(
+            Principal principal) {
+
+        return ResponseEntity.ok(
+                loanApplicationService.getMyLoans(principal.getName())
+        );
     }
 }

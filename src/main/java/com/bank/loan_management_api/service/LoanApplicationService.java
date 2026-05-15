@@ -14,7 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-
+import com.bank.loan_management_api.dto.request.LoanStatusUpdateRequest;
+import com.bank.loan_management_api.enums.Role;
+import java.util.List;
+import java.util.stream.Collectors;
 @Service
 public class LoanApplicationService {
 
@@ -68,5 +71,45 @@ public class LoanApplicationService {
         response.setCustomerEmail(loan.getCustomer().getUser().getEmail());
 
         return response;
+    }
+    //Add Method — Get Pending Loans
+    public List<LoanApplicationResponse> getPendingLoans() {
+
+        return loanApplicationRepository
+                .findByStatus(LoanStatus.SUBMITTED)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    //Add Method — Update Loan Status
+    @Transactional
+    public LoanApplicationResponse updateLoanStatus(
+            Long loanId,
+            LoanStatusUpdateRequest request) {
+
+        LoanApplication loan = loanApplicationRepository.findById(loanId)
+                .orElseThrow(() -> new BadRequestException("Loan not found"));
+
+        LoanStatus newStatus = request.getStatus();
+
+        if (newStatus == LoanStatus.SUBMITTED) {
+            throw new BadRequestException("Cannot move loan back to SUBMITTED");
+        }
+
+        loan.setStatus(newStatus);
+        loan.setUpdatedAt(LocalDateTime.now());
+
+        LoanApplication updatedLoan = loanApplicationRepository.save(loan);
+
+        return mapToResponse(updatedLoan);
+    }
+    //Add Method — Customer View Own Loans
+    public List<LoanApplicationResponse> getMyLoans(String email) {
+
+        return loanApplicationRepository
+                .findByCustomer_User_Email(email)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 }
