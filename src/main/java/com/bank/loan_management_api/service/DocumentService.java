@@ -22,20 +22,24 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.io.IOException;
 import java.util.UUID;
+
 @Service
 public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
+    private final S3StorageService s3StorageService;
     @Value("${file.upload-dir}")
     private String uploadDir;
     public DocumentService(DocumentRepository documentRepository,
                            CustomerRepository customerRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           S3StorageService s3StorageService) {
         this.documentRepository = documentRepository;
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
+        this.s3StorageService = s3StorageService;
     }
 
     public DocumentResponse uploadDocument(
@@ -51,49 +55,23 @@ public class DocumentService {
                         "Customer profile must be completed before uploading documents"
                 ));
 
-        try {
+        String fileUrl = s3StorageService.uploadFile(file);
 
-            Path uploadPath = Paths.get(uploadDir);
+        Document document = new Document();
 
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
+        document.setFileName(file.getOriginalFilename());
 
-            String originalFileName = file.getOriginalFilename();
+        document.setFileUrl(fileUrl);
 
-            String uniqueFileName =
-                    UUID.randomUUID() + "_" + originalFileName;
+        document.setDocumentType(documentType);
 
-            Path filePath = uploadPath.resolve(uniqueFileName);
+        document.setUploadedAt(LocalDateTime.now());
 
-            Files.copy(
-                    file.getInputStream(),
-                    filePath,
-                    StandardCopyOption.REPLACE_EXISTING
-            );
+        document.setCustomer(customer);
 
-            Document document = new Document();
+        Document saved = documentRepository.save(document);
 
-            document.setFileName(uniqueFileName);
-
-            document.setFileUrl(filePath.toString());
-
-            document.setDocumentType(documentType);
-
-            document.setUploadedAt(LocalDateTime.now());
-
-            document.setCustomer(customer);
-
-            Document saved = documentRepository.save(document);
-
-            return mapToResponse(saved);
-
-        } catch (IOException ex) {
-
-            throw new BadRequestException(
-                    "Failed to upload file: " + ex.getMessage()
-            );
-        }
+        return mapToResponse(saved);
     }
 
     public List<DocumentResponse> getMyDocuments(String email) {

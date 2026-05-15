@@ -24,3 +24,8 @@ app:
     expiration-ms: 86400000
 file:
   upload-dir: uploads
+
+aws:
+  s3:
+    bucket-name: bank-loan-management-documents-alekya19
+    region: us-east-2
