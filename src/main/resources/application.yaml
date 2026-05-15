@@ -22,3 +22,5 @@ app:
   jwt:
     secret: "mySuperSecretJwtKeyForLoanManagementApplication123456789"
     expiration-ms: 86400000
+file:
+  upload-dir: uploads

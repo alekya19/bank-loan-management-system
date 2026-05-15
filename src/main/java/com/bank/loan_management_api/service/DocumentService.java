@@ -15,14 +15,21 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import org.springframework.beans.factory.annotation.Value;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
+import java.util.UUID;
 @Service
 public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
-
+    @Value("${file.upload-dir}")
+    private String uploadDir;
     public DocumentService(DocumentRepository documentRepository,
                            CustomerRepository customerRepository,
                            UserRepository userRepository) {
@@ -40,18 +47,53 @@ public class DocumentService {
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
         Customer customer = customerRepository.findByUser(user)
-                .orElseThrow(() -> new BadRequestException("Customer profile must be completed before uploading documents"));
+                .orElseThrow(() -> new BadRequestException(
+                        "Customer profile must be completed before uploading documents"
+                ));
 
-        Document document = new Document();
-        document.setFileName(file.getOriginalFilename());
-        document.setFileUrl("local-storage/" + file.getOriginalFilename());
-        document.setDocumentType(documentType);
-        document.setUploadedAt(LocalDateTime.now());
-        document.setCustomer(customer);
+        try {
 
-        Document saved = documentRepository.save(document);
+            Path uploadPath = Paths.get(uploadDir);
 
-        return mapToResponse(saved);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String originalFileName = file.getOriginalFilename();
+
+            String uniqueFileName =
+                    UUID.randomUUID() + "_" + originalFileName;
+
+            Path filePath = uploadPath.resolve(uniqueFileName);
+
+            Files.copy(
+                    file.getInputStream(),
+                    filePath,
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+
+            Document document = new Document();
+
+            document.setFileName(uniqueFileName);
+
+            document.setFileUrl(filePath.toString());
+
+            document.setDocumentType(documentType);
+
+            document.setUploadedAt(LocalDateTime.now());
+
+            document.setCustomer(customer);
+
+            Document saved = documentRepository.save(document);
+
+            return mapToResponse(saved);
+
+        } catch (IOException ex) {
+
+            throw new BadRequestException(
+                    "Failed to upload file: " + ex.getMessage()
+            );
+        }
     }
 
     public List<DocumentResponse> getMyDocuments(String email) {
@@ -79,4 +121,7 @@ public class DocumentService {
 
         return response;
     }
+
+
+
 }
